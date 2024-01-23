@@ -1,3 +1,20 @@
+"""
+A little practice with asyncio.
+
+The grandmaster is playing a simultaneous exhibition against 10 players. The grandmaster rotates among
+them, making a move on each board. The players have a random probability of resigning on each turn. So
+does the grandmaster, but the probability is much lower.
+
+What makes the simulation interesting is that the grandmaster can show up at any time and force the
+player to move immediately. If this happens, the player has a higher probability of resigning.
+
+One emergent property of the simulation is that, as players start to resign, it puts pressure
+on the other players because the grandmaster is rotating among fewer boards. This creates pressure
+to move faster, which increases the probability that they will resign.
+
+Mostly, though, I just wanted a chance to play with asyncio.
+"""
+
 import asyncio
 from enum import Enum, auto
 import itertools
@@ -5,6 +22,7 @@ import random
 
 
 class PossibleActions(Enum):
+  """The three possible actions that a player or the grandmaster can take."""
   MAKE_MOVE = auto()
   RESIGN = auto()
   GRANDMASTER_ARRIVES = auto()
@@ -23,6 +41,7 @@ async def chess_player(index: int, out_channel: asyncio.Queue, in_channel: async
   """
   for i in itertools.count(start=1):
     print(f"Player #{index} considering move #{i}.")
+    # Assume that player takes 5-15 seconds to think of a move.
     move_duration = random.randint(5, 15)
   
     # Wait until either the player is done thinking or the grandmaster shows up.
@@ -66,6 +85,9 @@ async def chess_player(index: int, out_channel: asyncio.Queue, in_channel: async
     
 
 async def grandmaster(in_and_out_channel_pairs: list[tuple[asyncio.Queue, asyncio.Queue]]):
+  """
+  Iterate through the players, making a move on each board. If a player resigns, then we skip them from that point on.
+  """
   finished_player_ids = set()
   while len(finished_player_ids) < len(in_and_out_channel_pairs):
     # The grandmaster rotates among the boards until all the players are done.
